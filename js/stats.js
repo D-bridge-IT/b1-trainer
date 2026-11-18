@@ -38,6 +38,7 @@ const STATS = (() => {
     const t = TXT[I18N.lang] || TXT.ru, el = document.createElement('div');
     el.id = 'consent'; el.className = 'consent'; el.setAttribute('role', 'dialog');
     const p = document.createElement('p'); p.textContent = t[0];
+    const more = document.createElement('a'); more.href = 'privacy.html'; more.textContent = 'Datenschutz'; p.append(' ', more);
     const yes = document.createElement('button'); yes.className = 'btn primary sm'; yes.textContent = t[1];
     const no = document.createElement('button'); no.className = 'btn sm'; no.textContent = t[2];
     const row = document.createElement('div'); row.append(no, yes); el.append(p, row);
