@@ -2,7 +2,8 @@
 /* ===== Языки интерфейса =====
    Исходный язык — русский. Перевод накладывается на готовую страницу: словарь i18n/<код>.js
    сопоставляет русскую строку (или HTML небольшого блока) с переводом. Немецкие задания не трогаются. */
-const LANGS = { ru: 'Русский', uk: 'Українська', pl: 'Polski', ar: 'العربية', az: 'Azərbaycanca' };
+const LANGS = { ru: 'Русский', uk: 'Українська', en: 'English', pl: 'Polski', tr: 'Türkçe', es: 'Español', fr: 'Français', it: 'Italiano', ro: 'Română', ar: 'العربية', fa: 'فارسی', az: 'Azərbaycanca' };
+const RTL = { ar: 1, fa: 1 };
 const I18N = (() => {
   const CYR = /[А-Яа-яЁёІіЇїЄєҐґ]/, NUM = /\d+(?:[.,]\d+)?/g;
   const INL = { B: 1, I: 1, EM: 1, STRONG: 1, SMALL: 1, S: 1, SUP: 1, U: 1, BR: 1, SPAN: 1 };
@@ -59,7 +60,7 @@ const I18N = (() => {
     apply(root) { if (dict || API.collect) tr(root || document.body); },
     set(l) { if (!LANGS[l] || l === lang) return; store.set('lang', l); location.reload(); },
     init() {
-      const html = document.documentElement; html.lang = lang; html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      const html = document.documentElement; html.lang = lang; html.dir = RTL[lang] ? 'rtl' : 'ltr';
       const sel = document.getElementById('lang');
       if (sel) { sel.innerHTML = Object.keys(LANGS).map(k => `<option value="${k}"${k === lang ? ' selected' : ''}>${LANGS[k]}</option>`).join(''); sel.onchange = () => API.set(sel.value); }
       if (!dict) return;
