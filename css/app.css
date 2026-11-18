@@ -32,11 +32,19 @@ button,select,textarea{font:inherit;color:inherit}
 .nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
 .nav a{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;text-decoration:none;color:var(--muted);font-weight:600;font-size:.92rem}
 .nav a i{font-style:normal}.nav a:hover{background:var(--soft);color:var(--ink)}.nav a.on{background:var(--brand-soft);color:var(--brand)}
-.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 110px}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 40px;min-height:70vh}
+.site-foot{border-top:1px solid var(--line);background:var(--card);padding:22px max(16px,calc((100vw - 1180px)/2)) 26px}
+.sf-in{display:flex;justify-content:space-between;align-items:center;gap:16px 28px;flex-wrap:wrap}
+.sf-who{display:flex;flex-direction:column;gap:2px;max-width:60ch}.sf-who span{color:var(--muted);font-size:.88rem}
+.sf-links,.author-links{display:flex;gap:8px;flex-wrap:wrap}
+.sf-links a,.author-links a{padding:8px 14px;border-radius:99px;background:var(--brand-soft);color:var(--brand);font-weight:650;text-decoration:none;font-size:.92rem;white-space:nowrap}
+.sf-links a:hover,.author-links a:hover{background:var(--brand);color:var(--brand-ink)}
+.author{display:flex;justify-content:space-between;align-items:center;gap:14px 24px;flex-wrap:wrap;border-left:4px solid var(--brand)}.author p{margin:2px 0 0;color:var(--muted);font-size:.93rem}
 .fade>*{animation:up .35s both}@keyframes up{from{opacity:0;transform:translateY(10px)}}
 @media (max-width:860px){
   .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;flex-wrap:nowrap;justify-content:space-around;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   .nav a{flex-direction:column;gap:0;font-size:.66rem;padding:5px 6px;flex:1;text-align:center}.nav a i{font-size:1.25rem}.nav a.wide{display:none}
+  .site-foot{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
   .top{justify-content:center;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
   .actionbar .btn{flex:1;padding:10px 12px}
   .exambar{top:59px}
