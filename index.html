@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>B1 Trainer — подготовка к экзамену telc Deutsch B1</title>
+<meta name="description" content="Бесплатный тренажёр для подготовки к экзамену telc Deutsch B1: полная симуляция экзамена, Lesen, Sprachbausteine, Hören, Schreiben, Sprechen, грамматика и словарь.">
+<meta name="theme-color" content="#2747d8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="B1 Trainer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/"><span class="logo">B1</span><span class="bname">B1 Trainer<small>telc Deutsch B1</small></span></a>
+  <nav class="nav" id="nav">
+    <a href="#/" data-nav="home"><i>🏠</i><span>Главная</span></a>
+    <a href="#/exam" data-nav="exam"><i>🎓</i><span>Экзамен</span></a>
+    <a href="#/train" data-nav="train"><i>🧭</i><span>Модули</span></a>
+    <a href="#/grammar" data-nav="grammar"><i>🧩</i><span>Грамматика</span></a>
+    <a href="#/vocab" data-nav="vocab"><i>🗂️</i><span>Словарь</span></a>
+    <a href="#/phrases" data-nav="phrases" class="wide"><i>💬</i><span>Redemittel</span></a>
+    <a href="#/info" data-nav="info" class="wide"><i>ℹ️</i><span>Об экзамене</span></a>
+  </nav>
+</header>
+<main id="app" class="wrap"><p class="muted">Загрузка…</p></main>
+<div id="sheet" class="sheet" hidden><div class="sheet-in"><button class="sheet-x" data-act="sheetClose" aria-label="Закрыть">✕</button><div id="sheetBody"></div></div></div>
+<div id="toast" class="toast" hidden></div>
+<noscript><p style="padding:24px">Для работы тренажёра включите JavaScript.</p></noscript>
+<script src="data/exam1.js"></script>
+<script src="data/exam2.js"></script>
+<script src="data/exam3.js"></script>
+<script src="data/training.js"></script>
+<script src="js/core.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/views.js"></script>
+</body>
+</html>
