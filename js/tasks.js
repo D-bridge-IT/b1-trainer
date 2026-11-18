@@ -73,7 +73,7 @@ function mark(n) { if (!ctx.rv) return ''; return ctx.ans[n] === keyOf(ctx.ex, n
 function expl(n, extra) {
   if (!ctx.rv) return '';
   const e = itemOf(ctx.ex, n).explain;
-  return (e || extra) ? `<div class="expl">${extra ? `<b>${extra}</b> ` : ''}${esc(e || '')}</div>` : '';
+  return (e || extra) ? `<div class="expl">${extra ? `<b>${extra}</b> ` : ''}<span data-t>${esc(e || '')}</span></div>` : '';
 }
 function split(ref, work, label) {
   return `<div class="split"><aside class="refwrap" id="ref">${ref}</aside><div class="work">${work}</div></div>` +
@@ -146,7 +146,7 @@ const R = {
       const ok = ctx.ans[n] === String(it.answer), mine = ctx.ans[n] != null && ctx.ans[n] !== '' ? it.options[+ctx.ans[n]] : '—';
       return `<span class="gapr ${ok ? 'good' : 'bad'}"><sup>${n}</sup>${ok ? '' : `<s>${esc(mine)}</s> `}<b>${esc(it.options[it.answer])}</b></span>`;
     });
-    const list = ctx.rv ? `<div class="card"><h4>Разбор</h4>${t.items.map((it, i) => `<div class="exrow${qstate(i + 21)}"><span class="qn sm">${i + 21}</span><div><b>${esc(it.options[it.answer])}</b> <span class="muted">(${it.options.map(esc).join(' / ')})</span><br>${esc(it.explain || '')}</div></div>`).join('')}</div>` : '';
+    const list = ctx.rv ? `<div class="card"><h4>Разбор</h4>${t.items.map((it, i) => `<div class="exrow${qstate(i + 21)}"><span class="qn sm">${i + 21}</span><div><b>${esc(it.options[it.answer])}</b> <span class="muted">(${it.options.map(esc).join(' / ')})</span><br><span data-t>${esc(it.explain || '')}</span></div></div>`).join('')}</div>` : '';
     return `<div class="card letter prose">${body}</div>${list}`;
   },
   s2(ex) {
@@ -158,7 +158,7 @@ const R = {
       const ok = ctx.ans[n] === key, mine = ctx.ans[n] ? t.words[LET.indexOf(ctx.ans[n])] : '—';
       return `<span class="gapr ${ok ? 'good' : 'bad'}"><sup>${n}</sup>${ok ? '' : `<s>${esc(mine)}</s> `}<b>${esc(t.words[LET.indexOf(key)])}</b></span>`;
     });
-    const list = ctx.rv ? `<div class="card"><h4>Разбор</h4>${t.answers.map((a, i) => `<div class="exrow${qstate(i + 31)}"><span class="qn sm">${i + 31}</span><div><b>${a}) ${esc(t.words[LET.indexOf(a)])}</b><br>${esc((t.explains || [])[i] || '')}</div></div>`).join('')}</div>` : '';
+    const list = ctx.rv ? `<div class="card"><h4>Разбор</h4>${t.answers.map((a, i) => `<div class="exrow${qstate(i + 31)}"><span class="qn sm">${i + 31}</span><div><b>${a}) ${esc(t.words[LET.indexOf(a)])}</b><br><span data-t>${esc((t.explains || [])[i] || '')}</span></div></div>`).join('')}</div>` : '';
     return split(ref, `<div class="card letter prose">${body}</div>${list}`, 'Wörter');
   },
   h1(ex) {

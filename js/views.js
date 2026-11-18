@@ -32,7 +32,7 @@ const readiness = () => { const m = Object.keys(MODS); return m.reduce((s, k) =>
 const badge = v => v == null ? '<span class="bdg">новое</span>' : `<span class="bdg ${v >= 0.6 ? 'good' : 'bad'}">${Math.round(v * 100)}%</span>`;
 const ring = (v, label) => `<div class="ring" style="--v:${Math.round(v * 100)}"><div><b>${Math.round(v * 100)}%</b><small>${label}</small></div></div>`;
 const bar = (v, cls) => `<div class="bar ${cls || ''}"><i style="width:${Math.min(100, Math.round(v * 100))}%"></i></div>`;
-const fmtDate = t => new Date(t).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+const fmtDate = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}`; };
 
 /* ===== Главная ===== */
 function viewHome() {
@@ -257,7 +257,7 @@ function viewResult(id) {
       <p>${passed ? `Итог: ${fmtPts(total)} из 300 баллов, оценка «${grade(total)[0]}» (${grade(total)[1]}).` : passed == null ? `Письменная часть: ${fmtPts(r.written)} из 225 (${pct(r.written, 225)} %). Устная часть пропущена — для сертификата нужно набрать 60 % в обеих частях.` : `Для сдачи нужно минимум 135 из 225 в письменной и 45 из 75 в устной части.`}</p></div>
       ${ring(r.written / 225, 'письменная')}</section>
     <div class="card">${row('Leseverstehen', r.sec.lesen, 75)}${row('Sprachbausteine', r.sec.sb, 30)}${row('Hörverstehen', r.sec.hoeren, 75)}${row('Schriftlicher Ausdruck <small>(самооценка)</small>', r.w, 45)}<hr>${row('Schriftliche Prüfung — всего', r.written, 225, 135)}${r.oral != null ? row('Mündliche Prüfung <small>(самооценка)</small>', r.oral, 75, 45) : ''}</div>
-    ${weak.length ? `<div class="note">📌 Слабые места (меньше 60 %): ${weak.map(p => `<a href="#/train/${p.mod}">${p.name}</a>`).join(', ')}. Потренируйте эти части на других вариантах.</div>` : '<div class="note">Все части с автоматической проверкой выполнены выше проходного порога — отличная работа!</div>'}
+    ${weak.length ? `<div class="note"><span>📌 Слабые места (меньше 60 %):</span> ${weak.map(p => `<a href="#/train/${p.mod}">${p.name}</a>`).join(', ')}. <span>Потренируйте эти части на других вариантах.</span></div>` : '<div class="note">Все части с автоматической проверкой выполнены выше проходного порога — отличная работа!</div>'}
     <h2>Разбор ответов</h2><div class="tabs">${PARTS.map(p => `<button class="tab${p.id === tab ? ' on' : ''}" data-act="rtab" data-p="${p.id}">${p.short}<small>${Math.round(r.parts[p.id] * p.n)}/${p.n}</small></button>`).join('')}<button class="tab${tab === 'w' ? ' on' : ''}" data-act="rtab" data-p="w">Schreiben<small>${r.w}/45</small></button></div>
     ${tab === 'w' ? `<div class="card"><h3>Ваш текст</h3><div class="mytext prose">${r.text ? paras(r.text) : '<p class="muted">Текст не написан.</p>'}</div></div><div class="card"><h3>Образец</h3><div class="prose mail">${paras(ex.schreiben.model)}</div></div>` : renderPart(ex, tab)}
     <div class="actionbar"><a class="btn" href="#/">На главную</a><a class="btn primary" href="#/exam">Другой вариант</a></div>`, keep);
@@ -274,14 +274,14 @@ function runQuiz({ head, qs, onDone, backHref, backLabel }) {
     if (i >= qs.length) {
       onDone && onDone(right, qs.length);
       return setView(`${head}<div class="card quizend"><div class="bigscore ${right / qs.length >= 0.6 ? 'good' : 'bad'}">${right} / ${qs.length}</div><p>${right / qs.length >= 0.8 ? 'Отлично! Тема усвоена.' : right / qs.length >= 0.6 ? 'Неплохо, но есть что повторить.' : 'Перечитайте правило и попробуйте ещё раз.'}</p>
-        ${wrong.length ? `<div class="wronglist"><h4>Ошибки</h4>${wrong.map(q => `<div class="exrow is-bad"><div>${esc(q.q).replace('___', `<b class="blank">${esc(q.options[q.answer])}</b>`)}${q.q.includes('___') ? '' : ` — <b>${esc(q.options[q.answer])}</b>`}<br><span class="muted">${esc(q.explain || '')}</span></div></div>`).join('')}</div>` : ''}
+        ${wrong.length ? `<div class="wronglist"><h4>Ошибки</h4>${wrong.map(q => `<div class="exrow is-bad"><div>${esc(q.q).replace('___', `<b class="blank">${esc(q.options[q.answer])}</b>`)}${q.q.includes('___') ? '' : ` — <b data-t>${esc(q.options[q.answer])}</b>`}<br><span class="muted" data-t>${esc(q.explain || '')}</span></div></div>`).join('')}</div>` : ''}
         <div class="row center"><button class="btn" data-act="again">↺ Ещё раз</button><a class="btn primary" href="${backHref}">${backLabel}</a></div></div>`);
     }
     const q = qs[i], done = picked != null;
     setView(`${head}<div class="card quiz"><div class="bar"><i style="width:${i / qs.length * 100}%"></i></div><div class="muted qcount">Вопрос ${i + 1} из ${qs.length}</div>
       <h2 class="qq">${esc(q.q).replace('___', `<span class="blank${done ? ' filled' : ''}">${done ? esc(q.options[q.answer]) : '&nbsp;'}</span>`)}</h2>
-      <div class="opts">${q.options.map((o, j) => `<button class="opt${done && j === q.answer ? ' good' : ''}${done && j === picked && j !== q.answer ? ' bad' : ''}" data-act="pick" data-i="${j}"${done ? ' disabled' : ''}><b>${LET[j]}</b><span>${esc(o)}</span></button>`).join('')}</div>
-      ${done ? `<div class="expl ${picked === q.answer ? 'ok' : ''}">${picked === q.answer ? '✓ Верно. ' : '✗ Неверно. '}${esc(q.explain || '')}</div><div class="row end"><button class="btn primary" data-act="next">${i === qs.length - 1 ? 'Результат' : 'Дальше →'}</button></div>` : ''}</div>`, i > 0 || done);
+      <div class="opts">${q.options.map((o, j) => `<button class="opt${done && j === q.answer ? ' good' : ''}${done && j === picked && j !== q.answer ? ' bad' : ''}" data-act="pick" data-i="${j}"${done ? ' disabled' : ''}><b>${LET[j]}</b><span data-t>${esc(o)}</span></button>`).join('')}</div>
+      ${done ? `<div class="expl ${picked === q.answer ? 'ok' : ''}"><b>${picked === q.answer ? '✓ Верно.' : '✗ Неверно.'}</b> <span data-t>${esc(q.explain || '')}</span></div><div class="row end"><button class="btn primary" data-act="next">${i === qs.length - 1 ? 'Результат' : 'Дальше →'}</button></div>` : ''}</div>`, i > 0 || done);
   };
   A.pick = el => { if (picked != null) return; picked = +el.dataset.i; if (picked === qs[i].answer) right++; else wrong.push(qs[i]); draw(); };
   A.next = () => { i++; picked = null; draw(); };
@@ -294,7 +294,7 @@ function viewGrammar() {
   const g = store.get('gram', {});
   setView(`<h1>🧠 Грамматика B1</h1><p class="lead">Темы, которые чаще всего проверяются в Sprachbausteine и нужны для письма. В каждой — краткое правило и тест с объяснениями.</p>
     <div class="list"><a class="card rowlink accent" href="#/grammar/mix"><div><b>🎲 Микс: 15 случайных вопросов</b><span class="muted">Из всех тем — как в настоящих Sprachbausteine</span></div>${badge(g.mix)}</a>
-    ${TR.grammar.map(t => `<a class="card rowlink" href="#/grammar/${t.id}"><div><b>${esc(t.title)}</b><span class="muted">${esc(t.titleRu)} · ${t.questions.length} вопросов</span></div>${badge(g[t.id])}</a>`).join('')}</div>`);
+    ${TR.grammar.map(t => `<a class="card rowlink" href="#/grammar/${t.id}"><div><b>${esc(t.title)}</b><span class="muted"><span data-t>${esc(t.titleRu)}</span> · <span>${t.questions.length} вопросов</span></span></div>${badge(g[t.id])}</a>`).join('')}</div>`);
 }
 function viewGrammarTopic(id) {
   const mix = id === 'mix', t = mix ? { id: 'mix', title: 'Микс', titleRu: '15 случайных вопросов' } : TR.grammar.find(x => x.id === id);
@@ -307,7 +307,7 @@ function viewGrammarTopic(id) {
   });
   if (mix) return start();
   A.gStart = start;
-  setView(`${head}<h1>${esc(t.title)}</h1><p class="lead">${esc(t.titleRu)}</p><div class="card rule prose">${paras(t.rule)}</div><div class="actionbar"><a class="btn" href="#/grammar">← К темам</a><button class="btn primary" data-act="gStart">Начать тест (${t.questions.length} вопросов)</button></div>`);
+  setView(`${head}<h1>${esc(t.title)}</h1><p class="lead" data-t>${esc(t.titleRu)}</p><div class="card rule prose">${t.rule.split(/\n+/).filter(x => x.trim()).map(x => `<p data-t>${esc(x)}</p>`).join('')}</div><div class="actionbar"><a class="btn" href="#/grammar">← К темам</a><button class="btn primary" data-act="gStart">Начать тест (${t.questions.length} вопросов)</button></div>`);
 }
 
 /* ===== Словарь ===== */
@@ -315,7 +315,7 @@ const vknown = () => store.get('vk', {});
 function viewVocab() {
   const k = vknown();
   setView(`<h1>🗂️ Словарь B1</h1><p class="lead">Слова по темам экзамена. Учите карточками (нажмите на карточку, чтобы перевернуть) и проверяйте себя тестом.</p>
-    <div class="grid">${TR.vocab.map(t => { const n = Object.keys(k[t.id] || {}).length; return `<a class="card mod" href="#/vocab/${t.id}"><h3>${esc(t.title)}</h3><p class="muted">${esc(t.titleRu)} · выучено ${n} из ${t.words.length}</p>${bar(n / t.words.length)}</a>`; }).join('')}</div>`);
+    <div class="grid">${TR.vocab.map(t => { const n = Object.keys(k[t.id] || {}).length; return `<a class="card mod" href="#/vocab/${t.id}"><h3>${esc(t.title)}</h3><p class="muted"><span data-t>${esc(t.titleRu)}</span> · <span>выучено ${n} из ${t.words.length}</span></p>${bar(n / t.words.length)}</a>`; }).join('')}</div>`);
 }
 function viewVocabTopic(id, mode) {
   const t = TR.vocab.find(x => x.id === id); if (!t) return viewVocab();
@@ -332,7 +332,7 @@ function viewVocabTopic(id, mode) {
       if (pos >= queue.length) return setView(`${head}<div class="card quizend"><div class="bigscore good">${Object.keys(k[t.id]).length} / ${t.words.length}</div><p>слов отмечено как выученные</p><div class="row center"><button class="btn" data-act="cAgain">↺ Ещё круг</button><a class="btn primary" href="#/vocab/${t.id}/test">Пройти тест</a></div></div>`);
       const w = t.words[queue[pos]];
       setView(`${head}<div class="bar"><i style="width:${pos / queue.length * 100}%"></i></div><div class="muted qcount">${pos + 1} / ${queue.length}</div>
-        <div class="flash${flip ? ' flipped' : ''}" data-act="flip"><div class="fl-de">${esc(w.de)}</div>${flip ? `<div class="fl-ru">${esc(w.ru)}</div><div class="fl-ex">${esc(w.ex)}</div>` : '<div class="muted">нажмите, чтобы увидеть перевод</div>'}</div>
+        <div class="flash${flip ? ' flipped' : ''}" data-act="flip"><div class="fl-de">${esc(w.de)}</div>${flip ? `<div class="fl-ru" data-t>${esc(w.ru)}</div><div class="fl-ex">${esc(w.ex)}</div>` : '<div class="muted">нажмите, чтобы увидеть перевод</div>'}</div>
         <div class="row center"><button class="btn" data-act="sayWord" data-t="${esc(flip ? w.de.replace(/[,(].*$/, '') + '|' + w.ex : w.de.replace(/[,(].*$/, ''))}">🔊 Слушать</button>${flip ? '<button class="btn bad" data-act="cNo">Не знаю</button><button class="btn good" data-act="cYes">Знаю ✓</button>' : '<button class="btn primary" data-act="flip">Показать перевод</button>'}</div>`, true);
     };
     A.flip = () => { flip = !flip; draw(); };
@@ -341,15 +341,15 @@ function viewVocabTopic(id, mode) {
     return draw();
   }
   const k = vknown()[t.id] || {};
-  setView(`${head}<h1>${esc(t.title)}</h1><p class="lead">${esc(t.titleRu)} · ${t.words.length} слов</p><div class="row"><a class="btn primary" href="#/vocab/${t.id}/cards">Карточки</a><a class="btn" href="#/vocab/${t.id}/test">Тест</a></div>
-    <div class="card wordlist">${t.words.map((w, i) => `<div class="wrow${k[i] ? ' known' : ''}"><button class="sayb" data-act="sayWord" data-t="${esc(w.de.replace(/[,(].*$/, ''))}" aria-label="Слушать">🔊</button><div><b>${esc(w.de)}</b> — ${esc(w.ru)}<br><span class="muted">${esc(w.ex)}</span></div></div>`).join('')}</div>`);
+  setView(`${head}<h1>${esc(t.title)}</h1><p class="lead"><span data-t>${esc(t.titleRu)}</span> · <span>${t.words.length} слов</span></p><div class="row"><a class="btn primary" href="#/vocab/${t.id}/cards">Карточки</a><a class="btn" href="#/vocab/${t.id}/test">Тест</a></div>
+    <div class="card wordlist">${t.words.map((w, i) => `<div class="wrow${k[i] ? ' known' : ''}"><button class="sayb" data-act="sayWord" data-t="${esc(w.de.replace(/[,(].*$/, ''))}" aria-label="Слушать">🔊</button><div><b>${esc(w.de)}</b> — <span data-t>${esc(w.ru)}</span><br><span class="muted">${esc(w.ex)}</span></div></div>`).join('')}</div>`);
 }
 
 /* ===== Redemittel ===== */
 function viewPhrases() {
   A.sayWord = el => TTS.say(el.dataset.t.split('|'));
   setView(`<h1>💬 Redemittel</h1><p class="lead">Готовые фразы-клише. Выучите по 3–4 из каждой группы — и письмо, и разговор будут звучать увереннее. Нажмите 🔊, чтобы услышать произношение.</p>
-    ${TR.phrases.map((s, i) => `<details class="card acc"${i === 0 ? ' open' : ''}><summary><b>${esc(s.title)}</b><span class="muted">${esc(s.titleRu)}</span></summary>${s.groups.map(g => `<h4>${esc(g.title)}</h4>${g.items.map(x => `<div class="wrow"><button class="sayb" data-act="sayWord" data-t="${esc(x.de)}" aria-label="Слушать">🔊</button><div><b>${esc(x.de)}</b><br><span class="muted">${esc(x.ru)}</span></div></div>`).join('')}`).join('')}</details>`).join('')}`);
+    ${TR.phrases.map((s, i) => `<details class="card acc"${i === 0 ? ' open' : ''}><summary><b>${esc(s.title)}</b><span class="muted" data-t>${esc(s.titleRu)}</span></summary>${s.groups.map(g => `<h4>${esc(g.title)}</h4>${g.items.map(x => `<div class="wrow"><button class="sayb" data-act="sayWord" data-t="${esc(x.de)}" aria-label="Слушать">🔊</button><div><b>${esc(x.de)}</b><br><span class="muted" data-t>${esc(x.ru)}</span></div></div>`).join('')}`).join('')}</details>`).join('')}`);
 }
 
 /* ===== Об экзамене и настройки ===== */
@@ -435,6 +435,7 @@ function route() {
   $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.nav === hit[2]));
   hit[1](...m.slice(1));
 }
+I18N.init();
 window.addEventListener('hashchange', route);
 window.addEventListener('beforeunload', () => TTS.stop());
 route();
