@@ -17,6 +17,7 @@ function setView(html, keep) {
 }
 const crumbs = (...items) => `<nav class="crumbs">${items.map(([t, h]) => h ? `<a href="${h}">${t}</a>` : `<span>${t}</span>`).join('<i>›</i>')}</nav>`;
 function voiceNote() {
+  if (AFILES.size) return '';
   if (!TTS.syn) return '<div class="note warn">Этот браузер не умеет озвучивать текст. Откройте тренажёр в Chrome, Safari или Edge.</div>';
   if (TTS.hasDe === false) return '<div class="note warn">На устройстве не найден немецкий голос. Установите его: Android — «Настройки → Синтез речи → Google → Установить голосовые данные → Deutsch»; Windows — «Параметры → Время и язык → Речь → Добавить голоса → Немецкий»; iPhone — «Настройки → Универсальный доступ → Устный контент → Голоса → Немецкий».</div>';
   return '';
@@ -201,7 +202,7 @@ function drawExam(keep) {
     clearInterval(tickT);
     A.oralGo = () => { S.oral = true; S.step = 'prep'; S.deadline = Date.now() + 20 * 60000; saveS(); drawExam(); };
     A.oralSkip = () => { S.oral = false; S.step = 'rate'; saveS(); drawExam(); };
-    return setView(`<div class="card stepintro"><span class="eyebrow">${esc(ex.title)}</span><h1>Письменная часть завершена 🎉</h1><p>Осталась устная часть — Mündliche Prüfung: 20 минут подготовки и около 15 минут разговора. На настоящем экзамене она часто проходит в тот же день после перерыва.</p><p class="muted">Партнёра заменит немецкий голос, ваши ответы можно записать и прослушать. Баллы за устную часть — по самооценке.</p><div class="row"><button class="btn primary lg" data-act="oralGo">Перейти к устной части</button><button class="btn" data-act="oralSkip">Пропустить и показать результат</button></div></div>`);
+    return setView(`<div class="card stepintro"><span class="eyebrow">${esc(ex.title)}</span><h1>Письменная часть завершена 🎉</h1><p>Осталась устная часть — Mündliche Prüfung: 20 минут подготовки и около 15 минут разговора. На настоящем экзамене она часто проходит в тот же день после перерыва.</p><p class="muted">Партнёра заменят записанные немецкие дикторы, ваши ответы можно записать и прослушать. Баллы за устную часть — по самооценке.</p><div class="row"><button class="btn primary lg" data-act="oralGo">Перейти к устной части</button><button class="btn" data-act="oralSkip">Пропустить и показать результат</button></div></div>`);
   }
   if (S.step === 'prep') {
     const p = ex.sprechen; newCtx({ ex });
@@ -318,7 +319,7 @@ function viewVocab() {
 function viewVocabTopic(id, mode) {
   const t = TR.vocab.find(x => x.id === id); if (!t) return viewVocab();
   const head = crumbs(['Словарь', '#/vocab'], mode ? [t.title, '#/vocab/' + t.id] : [t.title], ...(mode ? [[mode === 'cards' ? 'Карточки' : 'Тест']] : []));
-  A.sayWord = el => TTS.speak([{ v: 'f', t: el.dataset.t }]);
+  A.sayWord = el => TTS.say(el.dataset.t.split('|'));
   if (mode === 'test') {
     const qs = shuffle(t.words).slice(0, 12).map(w => { const opts = shuffle([w, ...shuffle(t.words.filter(x => x !== w)).slice(0, 3)]); return { q: w.de, options: opts.map(o => o.ru), answer: opts.indexOf(w), explain: w.ex }; });
     return runQuiz({ head: head + `<h1>${esc(t.title)} — тест</h1>`, qs, backHref: '#/vocab/' + t.id, backLabel: 'К теме' });
@@ -331,7 +332,7 @@ function viewVocabTopic(id, mode) {
       const w = t.words[queue[pos]];
       setView(`${head}<div class="bar"><i style="width:${pos / queue.length * 100}%"></i></div><div class="muted qcount">${pos + 1} / ${queue.length}</div>
         <div class="flash${flip ? ' flipped' : ''}" data-act="flip"><div class="fl-de">${esc(w.de)}</div>${flip ? `<div class="fl-ru">${esc(w.ru)}</div><div class="fl-ex">${esc(w.ex)}</div>` : '<div class="muted">нажмите, чтобы увидеть перевод</div>'}</div>
-        <div class="row center"><button class="btn" data-act="sayWord" data-t="${esc(flip ? w.de.replace(/[,(].*$/, '') + '. ' + w.ex : w.de.replace(/[,(].*$/, ''))}">🔊 Слушать</button>${flip ? '<button class="btn bad" data-act="cNo">Не знаю</button><button class="btn good" data-act="cYes">Знаю ✓</button>' : '<button class="btn primary" data-act="flip">Показать перевод</button>'}</div>`, true);
+        <div class="row center"><button class="btn" data-act="sayWord" data-t="${esc(flip ? w.de.replace(/[,(].*$/, '') + '|' + w.ex : w.de.replace(/[,(].*$/, ''))}">🔊 Слушать</button>${flip ? '<button class="btn bad" data-act="cNo">Не знаю</button><button class="btn good" data-act="cYes">Знаю ✓</button>' : '<button class="btn primary" data-act="flip">Показать перевод</button>'}</div>`, true);
     };
     A.flip = () => { flip = !flip; draw(); };
     const mv = yes => { const i = queue[pos]; if (yes) k[t.id][i] = 1; else { delete k[t.id][i]; queue.push(i); } store.set('vk', k); pos++; flip = false; draw(); };
@@ -345,7 +346,7 @@ function viewVocabTopic(id, mode) {
 
 /* ===== Redemittel ===== */
 function viewPhrases() {
-  A.sayWord = el => TTS.speak([{ v: 'f', t: el.dataset.t }]);
+  A.sayWord = el => TTS.say(el.dataset.t.split('|'));
   setView(`<h1>💬 Redemittel</h1><p class="lead">Готовые фразы-клише. Выучите по 3–4 из каждой группы — и письмо, и разговор будут звучать увереннее. Нажмите 🔊, чтобы услышать произношение.</p>
     ${TR.phrases.map((s, i) => `<details class="card acc"${i === 0 ? ' open' : ''}><summary><b>${esc(s.title)}</b><span class="muted">${esc(s.titleRu)}</span></summary>${s.groups.map(g => `<h4>${esc(g.title)}</h4>${g.items.map(x => `<div class="wrow"><button class="sayb" data-act="sayWord" data-t="${esc(x.de)}" aria-label="Слушать">🔊</button><div><b>${esc(x.de)}</b><br><span class="muted">${esc(x.ru)}</span></div></div>`).join('')}`).join('')}</details>`).join('')}`);
 }
@@ -369,12 +370,12 @@ function viewInfo() {
     <div class="card"><h3>Как сдать</h3><p>Нужно набрать <b>60 %</b> отдельно в письменной (135 из 225) и в устной части (45 из 75). Если одна из частей не сдана, её можно пересдать отдельно до конца следующего календарного года.</p><p><b>Оценки:</b> 270–300 sehr gut · 240–269,5 gut · 210–239,5 befriedigend · 180–209,5 ausreichend.</p></div>
     <div class="card"><h3>Важно на экзамене</h3><ul class="ul"><li>Ответы переносятся в бланк (Antwortbogen) — оставьте на это 5 минут.</li><li>Словари, телефоны и переводчики запрещены.</li><li>За неверный ответ баллы не снимают — не оставляйте пустых полей.</li><li>В устной части важнее живой диалог, чем идеальная грамматика.</li></ul></div>
     <div class="card"><h3>План подготовки</h3><ul class="ul"><li><b>Каждый день 20–30 минут:</b> одна тема грамматики + 25 слов.</li><li><b>3 раза в неделю:</b> одна часть Lesen и одна Hören.</li><li><b>Раз в неделю:</b> письмо на время (30 минут) и устная часть с записью.</li><li><b>За 2 недели до экзамена:</b> полная симуляция каждого варианта.</li></ul></div>
-    <div class="card"><h3>Настройки звука</h3><p><label>Скорость речи: <select data-act="rate" class="sel"><option value="0.8"${TTS.rate === 0.8 ? ' selected' : ''}>медленнее</option><option value="0.9"${TTS.rate === 0.9 ? ' selected' : ''}>экзаменационная</option><option value="1"${TTS.rate === 1 ? ' selected' : ''}>быстрее</option></select></label></p><p><button class="btn sm" data-act="testVoice">🔊 Проверить немецкий голос</button></p><p class="muted">Голоса: ${TTS.f ? esc(TTS.f.name) : 'системный'}${TTS.m ? ' / ' + esc(TTS.m.name) : ''}. Аудио создаётся синтезатором речи вашего устройства; лучше всего звучат Chrome и Edge на компьютере и Safari на iPhone.</p>${voiceNote()}</div>
+    <div class="card"><h3>Настройки звука</h3><p><label>Скорость речи: <select data-act="rate" class="sel"><option value="0.8"${TTS.rate === 0.8 ? ' selected' : ''}>медленнее</option><option value="0.9"${TTS.rate === 0.9 ? ' selected' : ''}>экзаменационная</option><option value="1"${TTS.rate === 1 ? ' selected' : ''}>быстрее</option></select></label></p><p><button class="btn sm" data-act="testVoice">🔊 Проверить звук</button></p><p class="muted">Все тексты для аудирования, реплики партнёра, слова и фразы записаны заранее шестью разными немецкими дикторами (нейронные голоса) и звучат одинаково на любом устройстве.</p>${voiceNote()}</div>
   </div>
   <div class="card"><h3>Данные</h3><p class="muted">Прогресс хранится только в этом браузере, никуда не отправляется. Записи голоса не сохраняются.</p><button class="btn sm danger-ghost" data-act="reset">Сбросить весь прогресс</button></div>
   <p class="foot muted">Неофициальный учебный тренажёр. telc — зарегистрированный товарный знак telc gGmbH; сайт с ней не связан. Все тексты и задания авторские и составлены по общедоступному описанию формата. Актуальные правила и даты экзаменов уточняйте в своём экзаменационном центре.</p>`);
 }
-function testVoice() { TTS.speak([{ v: 'f', t: 'Guten Tag! Das ist ein Test. Können Sie mich gut verstehen?' }, { v: 'm', t: 'Ja, ich höre Sie sehr gut. Viel Erfolg bei der Prüfung!' }]); }
+function testVoice() { TTS.speak([{ v: 'f', t: 'Guten Tag! Das ist ein Test. Können Sie mich gut verstehen?' }, { v: 'm', t: 'Ja, ich höre Sie sehr gut. Viel Erfolg bei der Prüfung!' }], null, 'ui/test'); }
 
 /* ===== Глобальные действия и события ===== */
 const BASE = {

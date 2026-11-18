@@ -24,8 +24,48 @@ function toast(msg) {
   clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
 }
 
-/* ===== Озвучка: немецкий синтез речи браузера ===== */
+/* ===== Озвучка: записанные аудиофайлы (audio/), запасной вариант — синтез речи браузера ===== */
+const AUD = (window.TELC && window.TELC.audio) || { files: [], sprites: {} };
+const AFILES = new Set(AUD.files), SPR = {};
+Object.keys(AUD.sprites).forEach(k => Object.keys(AUD.sprites[k]).forEach(t => { SPR[t] = [k, AUD.sprites[k][t][0], AUD.sprites[k][t][1]]; }));
 const TTS = {
+  el: null,
+  // segs — реплики для синтеза; key — имя готового файла (например «test1/h2»)
+  speak(segs, onend, key) {
+    if (key && AFILES.has(key)) return this.playFile('audio/' + key + '.mp3', null, null, onend, () => this.synth(segs, onend));
+    this.synth(segs, onend);
+  },
+  // произнести одну или несколько фраз: из спрайта, если он есть
+  say(texts) {
+    texts = [].concat(texts).map(t => String(t).trim()).filter(Boolean);
+    const next = i => {
+      if (i >= texts.length) return;
+      const s = SPR[texts[i]], syn = () => this.synth([{ v: 'f', t: texts[i] }], ok => ok && next(i + 1));
+      if (s) this.playFile('audio/' + s[0] + '.mp3', s[1], s[2], ok => ok && next(i + 1), syn); else syn();
+    };
+    next(0);
+  },
+  playFile(src, from, to, onend, fallback) {
+    const pid = this.playingId; this.stop(); this.playingId = pid;
+    const my = ++this.token, a = this.el || (this.el = new Audio());
+    let seeked = from == null;
+    const fin = ok => { if (my !== this.token) return; this.token++; a.pause(); this.playingId = null; onend && onend(ok); };
+    const fail = () => { if (my !== this.token) return; this.token++; if (fallback) fallback(); else { this.playingId = null; onend && onend(false); } };
+    const seek = () => { if (my !== this.token || seeked) return; try { a.currentTime = from; seeked = true; } catch (e) { /* */ } };
+    a.onended = () => fin(true);
+    a.onerror = fail;
+    a.onloadedmetadata = seek;
+    let miss = 0;
+    a.ontimeupdate = () => {
+      if (my !== this.token || !seeked) return;
+      if (from != null && a.currentTime + 0.6 < from) { if (++miss > 3) { a.pause(); fail(); } else try { a.currentTime = from; } catch (e) { /* */ } return; }
+      if (to != null && a.currentTime >= to) fin(true);
+    };
+    if (a.getAttribute('data-src') !== src) { a.setAttribute('data-src', src); a.preload = 'auto'; a.src = src; }
+    if (a.readyState >= 1) seek();
+    a.playbackRate = Math.max(0.85, Math.min(1.15, this.rate / 0.9));
+    const p = a.play(); if (p && p.catch) p.catch(e => { if (e && e.name !== 'AbortError') fail(); });
+  },
   syn: window.speechSynthesis || null, f: null, m: null, hasDe: null, keep: [], token: 0, playingId: null,
   rate: store.get('rate', 0.9),
   init() {
@@ -57,9 +97,9 @@ const TTS = {
     out.push(t.slice(last));
     return out.map(s => s.trim()).filter(Boolean);
   },
-  speak(segs, onend) {
-    if (!this.syn) { toast('Этот браузер не поддерживает озвучку'); onend && onend(false); return; }
-    this.stop();
+  synth(segs, onend) {
+    if (!this.syn) { toast('Этот браузер не поддерживает озвучку'); this.playingId = null; onend && onend(false); return; }
+    const pid = this.playingId; this.stop(); this.playingId = pid;
     const my = ++this.token, parts = [];
     (Array.isArray(segs) ? segs : [{ v: 'f', t: segs }]).forEach(s => this.split(s.t).forEach(t => parts.push({ v: s.v, t })));
     const done = ok => { if (my !== this.token) return; this.token++; this.playingId = null; onend && onend(ok); };
@@ -76,7 +116,7 @@ const TTS = {
     });
     this.keep.forEach(u => this.syn.speak(u));
   },
-  stop() { this.token++; this.playingId = null; if (this.syn) try { this.syn.cancel(); } catch (e) { /* */ } }
+  stop() { this.token++; this.playingId = null; if (this.el) try { this.el.pause(); } catch (e) { /* */ } if (this.syn) try { this.syn.cancel(); } catch (e) { /* */ } }
 };
 TTS.init();
 

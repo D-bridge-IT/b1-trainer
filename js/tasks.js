@@ -108,8 +108,9 @@ function playAudio(id) {
     const used = ctx.plays[id] || 0; if (used >= a.max) return;
     ctx.plays[id] = used + 1; ctx.save();
   }
-  TTS.speak(a.segs, () => { refreshPlayers(); });
-  TTS.playingId = id; refreshPlayers();
+  TTS.playingId = id;
+  TTS.speak(a.segs, () => { refreshPlayers(); }, ctx.ex.id + '/' + id);
+  refreshPlayers();
 }
 function transcript(segs) {
   if (!ctx.rv) return '';
